@@ -1,6 +1,6 @@
 public class Person {
 
     public void sayHello(){
-        System.out.println("Hello Word!");
+        System.out.println("Hello World!");
     }
 }
