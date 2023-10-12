@@ -1,14 +1,9 @@
+package com.xiaoazhai;
+
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.springframework.beans.BeanDefinition;
 import org.springframework.beans.DefaultApplicationContext;
-
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.stream.IntStream;
 
 public class ApplicationContextTest  extends TestCase {
 
@@ -30,6 +25,14 @@ public class ApplicationContextTest  extends TestCase {
         person.sayHello();
     }
 
+
+    @Test
+    public void testAutoload(){
+        DefaultApplicationContext defaultApplicationContext= new DefaultApplicationContext();
+        defaultApplicationContext.init(ApplicationContextTest.class);
+        Person person= (Person) defaultApplicationContext.getBean("person");
+        person.sayHello();
+    }
 
 
 

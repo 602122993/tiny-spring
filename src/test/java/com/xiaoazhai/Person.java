@@ -1,3 +1,8 @@
+package com.xiaoazhai;
+
+import org.springframework.annotations.Component;
+
+@Component
 public class Person {
 
     public void sayHello(){

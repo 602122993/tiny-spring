@@ -1,5 +1,9 @@
 package org.springframework.beans;
 
+import org.springframework.annotations.Component;
+import org.springframework.annotations.ComponentScan;
+
+
 public class BeanDefinition {
 
     //bean的类型
