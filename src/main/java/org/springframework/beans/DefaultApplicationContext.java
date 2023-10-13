@@ -2,13 +2,15 @@ package org.springframework.beans;
 
 
 import org.springframework.annotations.Component;
+import org.springframework.resource.PropertyResolver;
 import org.springframework.resource.ResourceResolver;
 import org.springframework.util.ClassUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.*;
 
 public class DefaultApplicationContext {
 
@@ -18,11 +20,26 @@ public class DefaultApplicationContext {
     //保存实例化后的bean
     private final Map<String, Object> beanMap = new HashMap<>();
 
+    private PropertyResolver propertyResolver;
+
 
     public void init(Class<?> startClass) {
         //初始化容器
+        //加载配置文件
+        loadProperties();
         //扫描所有文件加载对应的bean
         loadBeanDefinition(startClass);
+    }
+
+    private void loadProperties() {
+        try {
+            String filePath = Objects.requireNonNull(PropertyResolver.class.getClassLoader().getResource("application.properties")).getFile();
+            Properties properties = new Properties();
+            properties.load(Files.newInputStream(new File(filePath).toPath()));
+            propertyResolver = new PropertyResolver(properties);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void loadBeanDefinition(Class<?> startClass) {
