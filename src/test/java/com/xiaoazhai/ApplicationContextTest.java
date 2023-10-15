@@ -5,13 +5,13 @@ import org.junit.Test;
 import org.springframework.beans.BeanDefinition;
 import org.springframework.beans.DefaultApplicationContext;
 
-public class ApplicationContextTest  extends TestCase {
+public class ApplicationContextTest extends TestCase {
 
 
     @Test
-    public  void testGetBean() {
+    public void testGetBean() {
         DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
-        defaultApplicationContext.registerBean("person",new Person());
+//        defaultApplicationContext.registerBean("person",new Person());Person
         Person person = (Person) defaultApplicationContext.getBean("person");
         person.sayHello();
     }
@@ -20,21 +20,47 @@ public class ApplicationContextTest  extends TestCase {
     @Test
     public void testBeanDefinition() throws InstantiationException, IllegalAccessException {
         DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
-        defaultApplicationContext.registerBeanDefinition("person",Person.class);
-        Person person= (Person) defaultApplicationContext.getBean("person");
+        defaultApplicationContext.registerBeanDefinition("person", Person.class);
+        Person person = (Person) defaultApplicationContext.getBean("person");
         person.sayHello();
     }
 
 
     @Test
-    public void testAutoload(){
-        DefaultApplicationContext defaultApplicationContext= new DefaultApplicationContext();
+    public void testAutoload() {
+        DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
         defaultApplicationContext.init(ApplicationContextTest.class);
-        Person person= (Person) defaultApplicationContext.getBean("person");
+        Person person = (Person) defaultApplicationContext.getBean("person");
         person.sayHello();
     }
 
 
+    @Test
+    public void testProperties() {
+        DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
+        defaultApplicationContext.init(ApplicationContextTest.class);
+        System.out.println(defaultApplicationContext.getPropertiesValue("abc", String.class));
+    }
+
+
+    @Test
+    public void testValueInject(){
+        DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
+        defaultApplicationContext.init(ApplicationContextTest.class);
+        Person person = (Person) defaultApplicationContext.getBean("person");
+        assertEquals(person.sayHello(),"123");
+    }
+
+
+    @Test
+    public void testBeanInject(){
+        DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
+        defaultApplicationContext.init(ApplicationContextTest.class);
+        Person person = (Person) defaultApplicationContext.getBean("person");
+        Animal animal = (Animal) defaultApplicationContext.getBean("animal");
+        assertEquals(person.getAnimal().sayHello(),"animal");
+        assertEquals(animal.getPerson().sayHello(),"123");
+    }
 
 //    public static void main(String[] args) throws  Exception {
 //        ThreadFactory factory = Thread.ofVirtual().name("route-",0).factory();

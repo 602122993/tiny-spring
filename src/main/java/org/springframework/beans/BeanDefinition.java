@@ -11,6 +11,8 @@ public class BeanDefinition {
     //bean 的名称
     String name;
 
+
+
     public BeanDefinition(String name, Class<?> clazz) {
         this.clazz = clazz;
         this.name = name;

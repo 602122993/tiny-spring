@@ -57,50 +57,22 @@ public class PropertyResolver {
         return (T) fn.apply(value);
     }
 
-    PropertyExpr parsePropertyExpr(String key) {
+    String parsePropertyExpr(String key) {
         if (key.startsWith("${") && key.endsWith("}")) {
-            // 是否存在defaultValue?
-            int n = key.indexOf(':');
-            if (n == (-1)) {
-                // 没有defaultValue: ${key}
-                String k = key.substring(2, key.length() - 1);
-                return new PropertyExpr(k, null);
-            } else {
-                // 有defaultValue: ${key:default}
-                String k = key.substring(2, n);
-                return new PropertyExpr(k, key.substring(n + 1, key.length() - 1));
-            }
+            return key.substring(2, key.length() - 1);
         }
-        return null;
+        return key;
     }
-//    public String getProperty(String key) {
-//        // 解析${abc.xyz:defaultValue}:
-//        PropertyExpr keyExpr = parsePropertyExpr(key);
-//        if (keyExpr != null) {
-//            if (keyExpr.getDefaultValue() != null) {
-//                // 带默认值查询:
-//                return getProperty(keyExpr.getKey(), keyExpr.getDefaultValue());
-//            } else {
-//                // 不带默认值查询:
-//                return getRequiredProperty(keyExpr.getKey());
-//            }
-//        }
-//        // 普通key查询:
-//        String value = this.properties.get(key);
-//        if (value != null) {
-//            return parseValue(value);
-//        }
-//        return value;
-//    }
 
-//    public <T> T getProperty(String key, Class<T> targetType) {
-//        String value = getProperty(key);
-//        if (value == null) {
-//            return null;
-//        }
-//        // 转换为指定类型:
-//        return convert(targetType, value);
-//    }
+
+    public <T> T getProperty(String key, Class<T> targetType) {
+        String value = this.properties.get(parsePropertyExpr(key));
+        if (value == null) {
+            return null;
+        }
+        // 转换为指定类型:
+        return convert(targetType, value);
+    }
 
     private String getRequiredProperty(String key) {
         return null;
