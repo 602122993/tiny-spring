@@ -48,14 +48,18 @@ public class DefaultApplicationContext {
         if (beanMap.get(beanDefinition.getName()) != null) {
             return beanMap.get(beanDefinition.getName());
         }
+        if (earlyBeanMap.get(beanDefinition.getName()) != null) {
+            return earlyBeanMap.get(beanDefinition.getName());
+        }
         //bean的实例。
         Object instance = newInstance(beanDefinition);
         //将bean放入缓存中
-        beanMap.put(beanDefinition.getName(), instance);
+        earlyBeanMap.put(beanDefinition.getName(), instance);
         //注入配置
         injectProperties(beanDefinition, instance);
         //注入其他bean
         injectBean(beanDefinition, instance);
+        beanMap.put(beanDefinition.getName(), instance);
         return instance;
     }
 
