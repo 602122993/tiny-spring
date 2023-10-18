@@ -7,9 +7,12 @@ import org.springframework.resource.ResourceResolver;
 import org.springframework.util.BeanUtil;
 import org.springframework.util.ClassUtils;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -59,8 +62,20 @@ public class DefaultApplicationContext {
         injectProperties(beanDefinition, instance);
         //注入其他bean
         injectBean(beanDefinition, instance);
+        //初始化bean
+        initBean(beanDefinition, instance);
         beanMap.put(beanDefinition.getName(), instance);
         return instance;
+    }
+
+    private void initBean(BeanDefinition beanDefinition, Object instance) {
+        beanDefinition.getInitMethodList().forEach(initMethod -> {
+            try {
+                initMethod.invoke(instance);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void injectBean(BeanDefinition beanDefinition, Object instance) {
@@ -152,15 +167,30 @@ public class DefaultApplicationContext {
         return instance;
     }
 
-
     public void registerBeanDefinition(String name, Class<?> clazz) {
-        BeanDefinition beanDefinition = new BeanDefinition(name, clazz);
+        List<Method> initMethod = ClassUtils.findInitMethods(clazz);
+        List<Method> destroyMethod = ClassUtils.findDestroyMethods(clazz);
+        List<LifecycleMethod> initLifeCircleMethod = initMethod.stream()
+                .map(LifecycleMethod::new)
+                .collect(Collectors.toList());
+        List<LifecycleMethod> destroyLifeCircleMethod = destroyMethod.stream()
+                .map(LifecycleMethod::new)
+                .collect(Collectors.toList());
+        BeanDefinition beanDefinition = new BeanDefinition(name, clazz, initLifeCircleMethod, destroyLifeCircleMethod);
         beanDefinitionMap.put(beanDefinition.getName(), beanDefinition);
     }
 
-    public void registerBean(String name, Object bean) {
-        beanMap.put(name, bean);
+    public void close(){
+        beanMap.forEach((beanName,bean)->{
+            BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
+            beanDefinition.getDestroyMethodList().forEach(destroy->{
+                try {
+                    destroy.invoke(bean);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        });
     }
-
 
 }

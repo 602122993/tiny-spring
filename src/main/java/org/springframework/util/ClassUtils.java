@@ -1,6 +1,11 @@
 package org.springframework.util;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClassUtils {
     public static <A extends Annotation> A findAnnotation(Class<?> target, Class<A> annoClass) {
@@ -27,5 +32,33 @@ public class ClassUtils {
 
         // 将类名的首字母小写
         return className.substring(0, 1).toLowerCase() + className.substring(1);
+    }
+
+    public static List<Method> findInitMethods(Class<?> clazz) {
+        List<Method> methodList = new ArrayList<>();
+        if(clazz.getSuperclass()!=null){
+            methodList.addAll(findInitMethods(clazz.getSuperclass()));
+        }
+        for (Method method : clazz.getMethods()) {
+            PostConstruct postConstruct = method.getAnnotation(PostConstruct.class);
+            if(postConstruct!=null){
+                methodList.add(method);
+            }
+        }
+        return methodList;
+    }
+
+    public static List<Method> findDestroyMethods(Class<?> clazz) {
+        List<Method> methodList = new ArrayList<>();
+        if(clazz.getSuperclass()!=null){
+            methodList.addAll(findInitMethods(clazz.getSuperclass()));
+        }
+        for (Method method : clazz.getMethods()) {
+            PreDestroy postConstruct = method.getAnnotation(PreDestroy.class);
+            if(postConstruct!=null){
+                methodList.add(method);
+            }
+        }
+        return methodList;
     }
 }

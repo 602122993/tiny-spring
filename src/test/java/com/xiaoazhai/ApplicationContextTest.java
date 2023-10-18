@@ -44,22 +44,30 @@ public class ApplicationContextTest extends TestCase {
 
 
     @Test
-    public void testValueInject(){
+    public void testValueInject() {
         DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
         defaultApplicationContext.init(ApplicationContextTest.class);
         Person person = (Person) defaultApplicationContext.getBean("person");
-        assertEquals(person.sayHello(),"123");
+        assertEquals(person.sayHello(), "123");
     }
 
 
     @Test
-    public void testBeanInject(){
+    public void testBeanInject() {
         DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
         defaultApplicationContext.init(ApplicationContextTest.class);
         Person person = (Person) defaultApplicationContext.getBean("person");
         Animal animal = (Animal) defaultApplicationContext.getBean("animal");
-        assertEquals(person.getAnimal().sayHello(),"animal");
-        assertEquals(animal.getPerson().sayHello(),"123");
+        assertEquals(person.getAnimal().sayHello(), "animal");
+        assertEquals(animal.getPerson().sayHello(), "123");
+    }
+
+
+    @Test
+    public void testLifecycle() {
+        DefaultApplicationContext defaultApplicationContext = new DefaultApplicationContext();
+        defaultApplicationContext.init(ApplicationContextTest.class);
+        defaultApplicationContext.close();
     }
 
 //    public static void main(String[] args) throws  Exception {
