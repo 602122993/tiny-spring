@@ -2,13 +2,12 @@ package org.springframework.beans;
 
 
 import org.springframework.annotations.Component;
+import org.springframework.beans.config.BeanPostProcessor;
 import org.springframework.resource.PropertyResolver;
 import org.springframework.resource.ResourceResolver;
 import org.springframework.util.BeanUtil;
 import org.springframework.util.ClassUtils;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -26,6 +25,8 @@ public class DefaultApplicationContext {
     private final Map<String, Object> beanMap = new HashMap<>();
     //保存正在实例化中的bean
     private final Map<String, Object> earlyBeanMap = new HashMap<>();
+    //全部的BeanPostProcessor
+    private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
 
 
     private PropertyResolver propertyResolver;
@@ -33,12 +34,34 @@ public class DefaultApplicationContext {
 
     public void init(Class<?> startClass) {
         //初始化容器
+
         //加载配置文件
         loadProperties();
         //扫描所有文件加载对应的bean
         loadBeanDefinition(startClass);
+        //加载全部BeanPostProcessor
+        loadBeanPostProcessor();
         //实例化所有bean
         createBean();
+    }
+
+    private void loadBeanPostProcessor() {
+        //获取全部的BeanPostProcessor
+        Map<String, BeanPostProcessor> beanPostProcessorMap = getBeansOfType(BeanPostProcessor.class);
+        beanPostProcessors.addAll(beanPostProcessorMap.values());
+    }
+
+
+    public <T> Map<String, T> getBeansOfType(Class<T> clazz) {
+        Map<String, T> result = new HashMap<>();
+        beanDefinitionMap.forEach((beanName, beanDefinition) -> {
+            Class beanClass = beanDefinition.getClazz();
+            if (clazz.isAssignableFrom(beanClass)) {
+                T bean = (T) createBeanSingleton(beanDefinition);
+                result.put(beanName, bean);
+            }
+        });
+        return result;
     }
 
     private void createBean() {
@@ -62,10 +85,30 @@ public class DefaultApplicationContext {
         injectProperties(beanDefinition, instance);
         //注入其他bean
         injectBean(beanDefinition, instance);
+        //在bean初始化之前执行的操作
+        Object wrapperBean = applyBeanPostProcessorsBeforeInitialization(instance, beanDefinition.getName());
         //初始化bean
-        initBean(beanDefinition, instance);
-        beanMap.put(beanDefinition.getName(), instance);
+        initBean(beanDefinition, wrapperBean);
+        //在bean初始化之前执行的操作
+        wrapperBean = applyBeanPostProcessorsAfterInitialization(wrapperBean, beanDefinition.getName());
+        beanMap.put(beanDefinition.getName(), wrapperBean);
         return instance;
+    }
+
+    private Object applyBeanPostProcessorsAfterInitialization(Object instance, String name) {
+        Object wrapperBean = instance;
+        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+            wrapperBean = beanPostProcessor.postProcessAfterInitialization(instance, name);
+        }
+        return wrapperBean;
+    }
+
+    private Object applyBeanPostProcessorsBeforeInitialization(Object instance, String beanName) {
+        Object wrapperBean = instance;
+        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+            wrapperBean = beanPostProcessor.postProcessBeforeInitialization(instance, beanName);
+        }
+        return wrapperBean;
     }
 
     private void initBean(BeanDefinition beanDefinition, Object instance) {
@@ -180,10 +223,10 @@ public class DefaultApplicationContext {
         beanDefinitionMap.put(beanDefinition.getName(), beanDefinition);
     }
 
-    public void close(){
-        beanMap.forEach((beanName,bean)->{
+    public void close() {
+        beanMap.forEach((beanName, bean) -> {
             BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
-            beanDefinition.getDestroyMethodList().forEach(destroy->{
+            beanDefinition.getDestroyMethodList().forEach(destroy -> {
                 try {
                     destroy.invoke(bean);
                 } catch (Throwable e) {
